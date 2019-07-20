@@ -72,8 +72,8 @@ This will generate a binary with the following cli options
 
 ## Sample output of stored data
 
-```bash
- sudo ./target/release/procshot             
+`$ sudo ./target/release/procshot`
+```shell             
 Decoded test file data: EncoDecode {
     hostname: "localghost",
     pid_map_list: [
