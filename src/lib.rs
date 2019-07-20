@@ -304,10 +304,7 @@ pub struct Config {
 ///     -V, --version    Prints version information
 ///
 /// OPTIONS:
-///     -d, --delay <delay>      Sets delay in seconds before it scans /proc every time. Defaults to 60 seconds. [default:
-///                              60]
-///     -s, --server <server>    Run as server. Server will run continuously and record stats while client mode read the
-///                              recorded stats. [default: false]
+///     -d, --delay <delay>      Sets delay in seconds before it scans /proc every time. [default: 60]
 ///
 /// SUBCOMMANDS:
 ///     help      Prints this message or the help of the given subcommand(s)
@@ -323,7 +320,7 @@ impl Config {
                             .short("d")
                             .long("delay")
                             .default_value("60")
-                            .help("Sets delay in seconds before it scans /proc every time. Defaults to 60 seconds."))
+                            .help("Sets delay in seconds before it scans /proc every time."))
                         .subcommand(SubCommand::with_name("server")
                             .about("Runs as server and records stats."))
                         .arg(Arg::with_name("time_from")

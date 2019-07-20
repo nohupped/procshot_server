@@ -48,8 +48,7 @@ This will generate a binary with the following cli options
  OPTIONS:
      -d, --delay <delay>      Sets delay in seconds before it scans /proc every time. Defaults to 60 seconds. [default:
                               60]
-     -s, --server <server>    Run as server. Server will run continuously and record stats while client mode read the
-                              recorded stats. [default: false]
+
 
  SUBCOMMANDS:
      help      Prints this message or the help of the given subcommand(s)
