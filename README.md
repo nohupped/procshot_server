@@ -46,8 +46,7 @@ This will generate a binary with the following cli options
      -V, --version    Prints version information
 
  OPTIONS:
-     -d, --delay <delay>      Sets delay in seconds before it scans /proc every time. Defaults to 60 seconds. [default:
-                              60]
+     -d, --delay <delay>      Sets delay in seconds before it scans /proc every time. Defaults to 60 seconds. [default: 60]
 
 
  SUBCOMMANDS:
