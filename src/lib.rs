@@ -1,4 +1,4 @@
-//! This crate can be used to continuously scan over `/proc` filesystem and store it in the struct `EncoDecode. This struct is serialized and is written to /var/log/procshot/data.
+//! This crate can be used to continuously scan over `/proc` filesystem and store it in the struct `EncoDecode. This struct is serialized and is written to the `datadir`.
 //! This is a wrapper over the [procfs](https://docs.rs/procfs/0.5.3/procfs/) crate, so the compatibility of this crate depends on the compatibility of the [procfs](https://docs.rs/procfs/0.5.3/procfs/) crate.
 //! 
 //! The stored data is of type `EncoDecode` and can be read as:
