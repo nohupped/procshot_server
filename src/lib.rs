@@ -349,7 +349,7 @@ impl Config {
         }
     }
 }
-/// Checks if the program is run as sudo (root) user. This doesn't check if the user has the privilege to read over all of /proc or write to /var/log
+/// Checks if the program is run as sudo (root) user. This doesn't check if the user has the privilege to read over all of /proc or write to the datadir
 /// but just checks if the uid passed to this is 0, and returns a `Result`
 ///
 /// # Examples
