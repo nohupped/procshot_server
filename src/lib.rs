@@ -33,10 +33,11 @@ extern crate hostname;
 extern crate clap;
 use clap::{App, Arg, SubCommand};
 
+// static mut previous_id_hashmap: Option<Vec<HashMap<i32, PidStatus>>> = None;
 
 /// PidStatus is the struct that holds the data that we store for each process' status. In this crate, we create a 
 /// ` Vec<HashMap<i32, PidStatus>>` which is a mapping of pid to its status.
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct PidStatus {
     /// Parent pid
     pub ppid: i32,
@@ -84,12 +85,14 @@ pub struct PidStatus {
     /// Amount of time that this process has been scheduled in kernel mode, measured in clock ticks
     /// (divide by [`ticks_per_second()`]).
     pub stime: u64,
+    /// Holds the CPU usage by that process.
+    pub cpu_usage: u64,
     
 }
 
 /// EncodDecode is the struct that we use to hold additional metadata and write to disk as
 /// serialized data of the form `let enc encoded: Vec<u8> = bincode::serialize(&encodecode).unwrap();`.
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct EncoDecode{
     pub hostname: String,
     /// Vector of hashmap of pid to the pidstats. 
@@ -108,6 +111,8 @@ pub struct EncoDecode{
 /// The example in the description can be used as a reference to read the stored struct.
 pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
     print!("Starting procshot server with delay set as {}",delay);
+
+    let mut previous_encodecode: EncoDecode;
 
     // Starts the continuous iteration over /proc
     loop {
@@ -146,12 +151,14 @@ pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
                 processor_last_executed: prc.stat.processor,
                 utime: prc.stat.utime,
                 stime: prc.stat.stime,
+                cpu_usage: 0,
             };
 
             let mut pidmap: HashMap<i32, PidStatus> = HashMap::new();
             pidmap.insert(status.pid, s);
             pid_map_list.push(pidmap);
         }
+        
         let encodecode: EncoDecode = EncoDecode{
             hostname: host.clone(),
             pid_map_list: pid_map_list,
@@ -159,6 +166,8 @@ pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
             time_epoch: time_epoch,
             total_cpu_time: total_cpu_time,
         };
+        previous_encodecode = encodecode.clone();
+        get_percent_values(&encodecode, &previous_encodecode);
         let encoded: Vec<u8> = bincode::serialize(&encodecode).unwrap();
         // println!("DECODED VALUES:: {:#?}", decoded);
         //assert_eq!(pids, decoded);
@@ -171,6 +180,11 @@ pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
         }
         thread::sleep(Duration::from_secs(delay));
     }
+}
+
+// Todo: Write body to populate percent values
+fn get_percent_values(current: &EncoDecode, previous: &EncoDecode){
+
 }
 
 /// Reads and parses /proc/stat's first line for calculating cpu percentage
