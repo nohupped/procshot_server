@@ -117,7 +117,6 @@ pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
     let mut previous_cpu_time: u64 = 0;
     // Starts the continuous iteration over /proc
     loop {
-        println!("Previous_cpu_time: {:?}", previous_cpu_time);
         let mut pid_map_hash: HashMap<i32, PidStatus> = HashMap::new(); //Vec::new();
         let time_epoch = std::time::SystemTime::now()
             .duration_since(std::time::SystemTime::UNIX_EPOCH)

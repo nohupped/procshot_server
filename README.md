@@ -77,62 +77,119 @@ This will generate a binary with the following cli options
 ```shell             
 Decoded test file data: EncoDecode {
     hostname: "localghost",
-    pid_map_list: [
-        {
-            1: PidStatus {
-                ppid: 0,
-                euid: 0,
-                cmd_long: [
-                    "/sbin/init",
-                ],
-                name: "systemd",
-                cmd_short: "systemd",
-                tracerpid: 0,
-                fdsize: 256,
-                state: "S (sleeping)",
-                vmpeak: Some(
-                    252840,
-                ),
-                vmsize: Some(
-                    187304,
-                ),
-                rss_pages: 2565,
-                rss_bytes: 10506240,
-                rsslim_bytes: 18446744073709551615,
-                processor_last_executed: Some(
-                    11,
-                ),
-                utime: 62,
-                stime: 377,
-            },
+    pid_map_list: {
+        169883: PidStatus {
+            ppid: 3284,
+            euid: 1000,
+            cmd_long: [
+                "/opt/google/chrome/chrome --type=renderer --field-trial-handle=11321657219978072658,9761930160602287450,131072 --lang=en-US --disable-client-side-phishing-detection --enable-auto-reload --num-raster-threads=4 --enable-main-frame-before-activation --service-request-channel-token=1438087544763584805 --renderer-client-id=214 --no-v8-untrusted-code-mitigations --shared-files=v8_context_snapshot_data:100,v8_natives_data:101",
+            ],
+            name: "chrome",
+            cmd_short: "chrome",
+            tracerpid: 0,
+            fdsize: 64,
+            state: "S (sleeping)",
+            vmpeak: Some(
+                549888,
+            ),
+            vmsize: Some(
+                525300,
+            ),
+            rss_pages: 13139,
+            rss_bytes: 53817344,
+            rsslim_bytes: 18446744073709551615,
+            processor_last_executed: Some(
+                4,
+            ),
+            utime: 5,
+            stime: 2,
+            user_cpu_usage: 0.0,
+            sys_cpu_usage: 0.0,
         },
-        {
-            373: PidStatus {
-                ppid: 1,
-                euid: 0,
-                cmd_long: [
-                    "/usr/lib/systemd/systemd-journald",
-                ],
-                name: "systemd-journal",
-                cmd_short: "systemd-journal",
-                tracerpid: 0,
-                fdsize: 256,
-                state: "S (sleeping)",
-                vmpeak: Some(
-                    56756,
-                ),
-                vmsize: Some(
-                    49068,
-                ),
-                rss_pages: 2486,
-                rss_bytes: 10182656,
-                rsslim_bytes: 18446744073709551615,
-                processor_last_executed: Some(
-                    2,
-                ),
-                utime: 50,
-                stime: 39,
-            },
+        2078: PidStatus {
+            ppid: 1783,
+            euid: 1000,
+            cmd_long: [
+                "/usr/lib/at-spi2-registryd",
+                "--use-gnome-session",
+            ],
+            name: "at-spi2-registr",
+            cmd_short: "at-spi2-registr",
+            tracerpid: 0,
+            fdsize: 64,
+            state: "S (sleeping)",
+            vmpeak: Some(
+                229136,
+            ),
+            vmsize: Some(
+                163600,
+            ),
+            rss_pages: 1472,
+            rss_bytes: 6029312,
+            rsslim_bytes: 18446744073709551615,
+            processor_last_executed: Some(
+                2,
+            ),
+            utime: 1,
+            stime: 0,
+            user_cpu_usage: 0.0,
+            sys_cpu_usage: 0.0,
+        },
+        2130: PidStatus {
+            ppid: 1783,
+            euid: 1000,
+            cmd_long: [
+                "/usr/lib/gsd-screensaver-proxy",
+            ],
+            name: "gsd-screensaver",
+            cmd_short: "gsd-screensaver",
+            tracerpid: 0,
+            fdsize: 64,
+            state: "S (sleeping)",
+            vmpeak: Some(
+                234084,
+            ),
+            vmsize: Some(
+                234084,
+            ),
+            rss_pages: 1094,
+            rss_bytes: 4481024,
+            rsslim_bytes: 18446744073709551615,
+            processor_last_executed: Some(
+                6,
+            ),
+            utime: 1,
+            stime: 0,
+            user_cpu_usage: 0.0,
+            sys_cpu_usage: 0.0,
+        },
+        2112: PidStatus {
+            ppid: 1783,
+            euid: 1000,
+            cmd_long: [
+                "/usr/lib/gsd-housekeeping",
+            ],
+            name: "gsd-housekeepin",
+            cmd_short: "gsd-housekeepin",
+            tracerpid: 0,
+            fdsize: 64,
+            state: "S (sleeping)",
+            vmpeak: Some(
+                375152,
+            ),
+            vmsize: Some(
+                310204,
+            ),
+            rss_pages: 1764,
+            rss_bytes: 7225344,
+            rsslim_bytes: 18446744073709551615,
+            processor_last_executed: Some(
+                10,
+            ),
+            utime: 7,
+            stime: 7,
+            user_cpu_usage: 0.0,
+            sys_cpu_usage: 0.0,
         },
 ..... snip .....
 
