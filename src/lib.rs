@@ -29,11 +29,13 @@ use std::fs::File;
 use std::io::Write;
 use std::io::{BufRead, BufReader};
 
+// Tmp imports
+
 extern crate hostname;
 extern crate clap;
 use clap::{App, Arg, SubCommand};
 
-// static mut previous_id_hashmap: Option<Vec<HashMap<i32, PidStatus>>> = None;
+
 
 /// PidStatus is the struct that holds the data that we store for each process' status. In this crate, we create a 
 /// ` Vec<HashMap<i32, PidStatus>>` which is a mapping of pid to its status.
@@ -112,7 +114,7 @@ pub struct EncoDecode{
 pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
     print!("Starting procshot server with delay set as {}",delay);
 
-    let mut previous_encodecode: EncoDecode;
+    let mut previous_stats: Option<Vec<HashMap<i32, PidStatus>>> = None;
 
     // Starts the continuous iteration over /proc
     loop {
@@ -151,13 +153,14 @@ pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
                 processor_last_executed: prc.stat.processor,
                 utime: prc.stat.utime,
                 stime: prc.stat.stime,
-                cpu_usage: 0,
+                cpu_usage: get_cpu_usage(status.pid, &previous_stats),
             };
 
             let mut pidmap: HashMap<i32, PidStatus> = HashMap::new();
             pidmap.insert(status.pid, s);
             pid_map_list.push(pidmap);
         }
+        previous_stats = Some(pid_map_list.clone());
         
         let encodecode: EncoDecode = EncoDecode{
             hostname: host.clone(),
@@ -166,8 +169,7 @@ pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
             time_epoch: time_epoch,
             total_cpu_time: total_cpu_time,
         };
-        previous_encodecode = encodecode.clone();
-        get_percent_values(&encodecode, &previous_encodecode);
+        
         let encoded: Vec<u8> = bincode::serialize(&encodecode).unwrap();
         // println!("DECODED VALUES:: {:#?}", decoded);
         //assert_eq!(pids, decoded);
@@ -183,8 +185,12 @@ pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
 }
 
 // Todo: Write body to populate percent values
-fn get_percent_values(current: &EncoDecode, previous: &EncoDecode){
-
+fn get_cpu_usage(pid: i32, previous:  &Option<Vec<HashMap<i32, PidStatus>>>) -> u64{
+    match previous {
+        Some(x) => 100,
+        None => 0
+    }
+    
 }
 
 /// Reads and parses /proc/stat's first line for calculating cpu percentage
