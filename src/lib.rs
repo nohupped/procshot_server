@@ -216,17 +216,13 @@ fn get_cpu_usage(
         "user" => match previous {
             Some(x) => match x.get(&pid) {
                 Some(p) => {
-                    println!("Current user_time: {}, previous utime: {}, current cpu time: {}, previous_cpu_time: {}", current_type_time, p.utime, current_cpu_time, previous_cpu_time);
-                    100 as f64 * (current_type_time as f64 - p.utime as f64)
-                        / (current_cpu_time as f64 - previous_cpu_time as f64)
+                    100 as f64 * (current_type_time as f64 - p.utime as f64) / (current_cpu_time as f64 - previous_cpu_time as f64)
                 }
                 None => {
-                    println!("PID not found for {:?}\n and {:?}", pid, x);
                     0.0
                 }
             },
             None => {
-                println! {"No previous stats found"};
                 0.0
             }
         },

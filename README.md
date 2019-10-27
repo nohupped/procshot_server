@@ -1,7 +1,7 @@
 
 # procshot_server  [![Build Status](https://travis-ci.org/nohupped/procshot_server.svg?branch=master)](https://travis-ci.org/nohupped/procshot_server)
 
-rust [crate (refer this for crate documentation)](https://crates.io/crates/procshot_server) to record /proc stats periodically. This library just records the stats. Processing may be done separate.
+A lame attempt of a rust [crate (refer this for crate documentation)](https://crates.io/crates/procshot_server) to record /proc stats periodically. This library just records the stats. Processing to be done separately. This is written as a part of learning rust.
 
 ## Server example
 
