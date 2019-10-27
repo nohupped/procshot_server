@@ -98,7 +98,7 @@ pub struct PidStatus {
 pub struct EncoDecode{
     pub hostname: String,
     /// Vector of hashmap of pid to the pidstats. 
-    pub pid_map_list: Vec<HashMap<i32, PidStatus>>,
+    pub pid_map_list: HashMap<i32, PidStatus>,
     /// The epoch time at which the stats were recorded
     pub time_epoch: u64,
     /// Can be used for sampling
@@ -114,11 +114,12 @@ pub struct EncoDecode{
 pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
     print!("Starting procshot server with delay set as {}",delay);
 
-    let mut previous_stats: Option<Vec<HashMap<i32, PidStatus>>> = None;
-
+    let  mut previous_stats: Option<HashMap<i32, PidStatus>> = None;
+    let mut previous_cpu_time: u64 = 0;
     // Starts the continuous iteration over /proc
     loop {
-        let mut pid_map_list: Vec<HashMap<i32, PidStatus>> = Vec::new();
+        println!("Previous_cpu_time: {:?}", previous_cpu_time );
+        let mut pid_map_hash: HashMap<i32, PidStatus> = HashMap::new();//Vec::new();
         let time_epoch = std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_secs();
         let total_cpu_time = match read_proc_stat(){
              Ok(t) => t,
@@ -153,18 +154,19 @@ pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
                 processor_last_executed: prc.stat.processor,
                 utime: prc.stat.utime,
                 stime: prc.stat.stime,
-                cpu_usage: get_cpu_usage(status.pid, &previous_stats),
+                cpu_usage: get_cpu_usage(status.pid, &previous_stats, &total_cpu_time, &previous_cpu_time),
             };
 
-            let mut pidmap: HashMap<i32, PidStatus> = HashMap::new();
-            pidmap.insert(status.pid, s);
-            pid_map_list.push(pidmap);
+            // let mut pidmap: HashMap<i32, PidStatus> = HashMap::new();
+            pid_map_hash.insert(status.pid, s);
+            
         }
-        previous_stats = Some(pid_map_list.clone());
+        previous_stats = Some(pid_map_hash.clone());
+        previous_cpu_time = total_cpu_time;
         
         let encodecode: EncoDecode = EncoDecode{
             hostname: host.clone(),
-            pid_map_list: pid_map_list,
+            pid_map_list: pid_map_hash,
             delay: delay,
             time_epoch: time_epoch,
             total_cpu_time: total_cpu_time,
@@ -185,10 +187,15 @@ pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
 }
 
 // Todo: Write body to populate percent values
-fn get_cpu_usage(pid: i32, previous:  &Option<Vec<HashMap<i32, PidStatus>>>) -> u64{
+fn get_cpu_usage(pid: i32, previous:  &Option<HashMap<i32, PidStatus>>, total_cpu_time: &u64, previous_cpu_time: &u64) -> u64{
     match previous {
-        Some(x) => 100,
-        None => 0
+        Some(x) => {
+            match x.get(&pid) {
+                Some(p) => *total_cpu_time,
+                None => 1,
+            }
+        },
+        None => 0,
     }
     
 }
