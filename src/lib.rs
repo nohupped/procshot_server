@@ -1,8 +1,8 @@
 //! This crate can be used to continuously scan over `/proc` filesystem and store it in the struct `EncoDecode. This struct is serialized and is written to the `datadir`.
 //! This is a wrapper over the [procfs](https://docs.rs/procfs/0.5.3/procfs/) crate, so the compatibility of this crate depends on the compatibility of the [procfs](https://docs.rs/procfs/0.5.3/procfs/) crate.
-//! 
+//!
 //! The stored data is of type `EncoDecode` and can be read as:
-//! 
+//!
 //! # Examples
 //!
 //! ```rust
@@ -31,13 +31,11 @@ use std::io::{BufRead, BufReader};
 
 // Tmp imports
 
-extern crate hostname;
 extern crate clap;
+extern crate hostname;
 use clap::{App, Arg, SubCommand};
 
-
-
-/// PidStatus is the struct that holds the data that we store for each process' status. In this crate, we create a 
+/// PidStatus is the struct that holds the data that we store for each process' status. In this crate, we create a
 /// ` Vec<HashMap<i32, PidStatus>>` which is a mapping of pid to its status.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct PidStatus {
@@ -87,17 +85,18 @@ pub struct PidStatus {
     /// Amount of time that this process has been scheduled in kernel mode, measured in clock ticks
     /// (divide by [`ticks_per_second()`]).
     pub stime: u64,
-    /// Holds the CPU usage by that process.
-    pub cpu_usage: u64,
-    
+    /// Holds the user CPU usage by that process.
+    pub user_cpu_usage: f64,
+    /// Holds the sys CPU usage by that process.    
+    pub sys_cpu_usage: f64,
 }
 
 /// EncodDecode is the struct that we use to hold additional metadata and write to disk as
 /// serialized data of the form `let enc encoded: Vec<u8> = bincode::serialize(&encodecode).unwrap();`.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
-pub struct EncoDecode{
+pub struct EncoDecode {
     pub hostname: String,
-    /// Vector of hashmap of pid to the pidstats. 
+    /// Vector of hashmap of pid to the pidstats.
     pub pid_map_list: HashMap<i32, PidStatus>,
     /// The epoch time at which the stats were recorded
     pub time_epoch: u64,
@@ -107,32 +106,35 @@ pub struct EncoDecode{
     pub total_cpu_time: u64,
 }
 
-/// scan_proc continuously scans /proc and records all the processes. 
+/// scan_proc continuously scans /proc and records all the processes.
 /// scan_proc omits the pids if status.vmpeak == None || prc.stat.rss == 0 || status.pid < 0.
 /// One file is created for each iteration and sleeps for `delay` seconds after each iteration.
 /// The example in the description can be used as a reference to read the stored struct.
 pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
-    print!("Starting procshot server with delay set as {}",delay);
+    print!("Starting procshot server with delay set as {}", delay);
 
-    let  mut previous_stats: Option<HashMap<i32, PidStatus>> = None;
+    let mut previous_stats: Option<HashMap<i32, PidStatus>> = None;
     let mut previous_cpu_time: u64 = 0;
     // Starts the continuous iteration over /proc
     loop {
-        println!("Previous_cpu_time: {:?}", previous_cpu_time );
-        let mut pid_map_hash: HashMap<i32, PidStatus> = HashMap::new();//Vec::new();
-        let time_epoch = std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_secs();
-        let total_cpu_time = match read_proc_stat(){
-             Ok(t) => t,
-             Err(e) => {
-                eprintln!("Cannot read from /proc/stat, error is:: {:?}", e); 
+        println!("Previous_cpu_time: {:?}", previous_cpu_time);
+        let mut pid_map_hash: HashMap<i32, PidStatus> = HashMap::new(); //Vec::new();
+        let time_epoch = std::time::SystemTime::now()
+            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let total_cpu_time = match read_proc_stat() {
+            Ok(t) => t,
+            Err(e) => {
+                eprintln!("Cannot read from /proc/stat, error is:: {:?}", e);
                 continue;
-                },
+            }
         };
 
         // Iterate over all processess
         for prc in procfs::all_processes() {
             let status = prc.status().unwrap_or_else(|_| dummy_pid_status());
-            if status.vmpeak == None || prc.stat.rss == 0 || status.pid < 0{
+            if status.vmpeak == None || prc.stat.rss == 0 || status.pid < 0 {
                 continue;
             }
             let s = PidStatus {
@@ -154,28 +156,41 @@ pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
                 processor_last_executed: prc.stat.processor,
                 utime: prc.stat.utime,
                 stime: prc.stat.stime,
-                cpu_usage: get_cpu_usage(status.pid, &previous_stats, &total_cpu_time, &previous_cpu_time),
+                user_cpu_usage: get_cpu_usage(
+                    "user".to_string(),
+                    status.pid,
+                    &previous_stats,
+                    prc.stat.utime,
+                    total_cpu_time,
+                    previous_cpu_time,
+                ),
+                sys_cpu_usage: get_cpu_usage(
+                    "system".to_string(),
+                    status.pid,
+                    &previous_stats,
+                    prc.stat.stime,
+                    total_cpu_time,
+                    previous_cpu_time,
+                ),
             };
 
             // let mut pidmap: HashMap<i32, PidStatus> = HashMap::new();
             pid_map_hash.insert(status.pid, s);
-            
         }
         previous_stats = Some(pid_map_hash.clone());
         previous_cpu_time = total_cpu_time;
-        
-        let encodecode: EncoDecode = EncoDecode{
+
+        let encodecode: EncoDecode = EncoDecode {
             hostname: host.clone(),
             pid_map_list: pid_map_hash,
             delay: delay,
             time_epoch: time_epoch,
             total_cpu_time: total_cpu_time,
         };
-        
         let encoded: Vec<u8> = bincode::serialize(&encodecode).unwrap();
         // println!("DECODED VALUES:: {:#?}", decoded);
         //assert_eq!(pids, decoded);
-        let file = File::create(format!{"{}/{}.procshot", datadir, time_epoch});
+        let file = File::create(format! {"{}/{}.procshot", datadir, time_epoch});
         match file {
             Err(e) => eprintln!("Cannot create file!, err: {}", e),
             Ok(mut f) => {
@@ -186,42 +201,79 @@ pub fn scan_proc(delay: u64, host: String, datadir: &'static str) {
     }
 }
 
-// Todo: Write body to populate percent values
-fn get_cpu_usage(pid: i32, previous:  &Option<HashMap<i32, PidStatus>>, total_cpu_time: &u64, previous_cpu_time: &u64) -> u64{
-    match previous {
-        Some(x) => {
-            match x.get(&pid) {
-                Some(p) => *total_cpu_time,
-                None => 1,
+/// get_cpu_usage calculates cpu usage for user/system.
+/// user_util = 100 * (utime_after - utime_before) / (time_total_after - time_total_before);
+/// sys_util = 100 * (stime_after - stime_before) / (time_total_after - time_total_before);
+fn get_cpu_usage(
+    type_of: String,
+    pid: i32,
+    previous: &Option<HashMap<i32, PidStatus>>,
+    current_type_time: u64,
+    current_cpu_time: u64,
+    previous_cpu_time: u64,
+) -> f64 {
+    match type_of.as_ref() {
+        "user" => match previous {
+            Some(x) => match x.get(&pid) {
+                Some(p) => {
+                    println!("Current user_time: {}, previous utime: {}, current cpu time: {}, previous_cpu_time: {}", current_type_time, p.utime, current_cpu_time, previous_cpu_time);
+                    100 as f64 * (current_type_time as f64 - p.utime as f64)
+                        / (current_cpu_time as f64 - previous_cpu_time as f64)
+                }
+                None => {
+                    println!("PID not found for {:?}\n and {:?}", pid, x);
+                    0.0
+                }
+            },
+            None => {
+                println! {"No previous stats found"};
+                0.0
             }
         },
-        None => 0,
+        "system" => match previous {
+            Some(x) => match x.get(&pid) {
+                Some(p) => {
+                    100 as f64 * (current_type_time as f64 - p.stime as f64)
+                        / (current_cpu_time as f64 - previous_cpu_time as f64)
+                }
+                None => 0.0,
+            },
+            None => 0.0,
+        },
+        _ => {
+            println!("Keyword not supported!");
+            0.0
+        }
     }
-    
 }
 
 /// Reads and parses /proc/stat's first line for calculating cpu percentage
-fn read_proc_stat() -> Result<u64, std::io::Error>{
+fn read_proc_stat() -> Result<u64, std::io::Error> {
     let f = match File::open("/proc/stat") {
-        Ok(somefile) => {somefile},
+        Ok(somefile) => somefile,
         Err(e) => return Err(e),
     };
 
     let mut reader_itr = BufReader::new(f).lines();
-    let first_line = match reader_itr.next() { // next returns an Option<Result<>> type, and hence the nested some(ok())
-        Some(total_string) => {
-            match total_string {
-                Ok(s) => s,
-                Err(e) => return Err(e),
-            }
-            },
-        None => return Err(std::io::Error::new(std::io::ErrorKind::Other, "Cannot read the first line from /proc/stat.")),
+    let first_line = match reader_itr.next() {
+        // next returns an Option<Result<>> type, and hence the nested some(ok())
+        Some(total_string) => match total_string {
+            Ok(s) => s,
+            Err(e) => return Err(e),
+        },
+        None => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Cannot read the first line from /proc/stat.",
+            ))
+        }
     };
-    let total_vector = first_line.split("cpu") // Split at "cpu" 
-                        .collect::<Vec<&str>>()[1] // Skip 0th element
-                        .split(" ") // Split at " "
-                        .filter(|&x| x != "") // filter empty lines
-                        .collect::<Vec<&str>>(); // collect
+    let total_vector = first_line
+        .split("cpu") // Split at "cpu"
+        .collect::<Vec<&str>>()[1] // Skip 0th element
+        .split(" ") // Split at " "
+        .filter(|&x| x != "") // filter empty lines
+        .collect::<Vec<&str>>(); // collect
     let mut total: u64 = 0;
     for i in total_vector {
         total += i.parse::<u64>().unwrap();
@@ -338,7 +390,6 @@ pub struct Config {
 ///     server    Decides whether to run as server or client
 impl Config {
     pub fn new() -> Self {
-
         let matches = App::new("procshot")
                         .version("1.0")
                         .author("nohupped@gmail.com")
@@ -382,7 +433,7 @@ impl Config {
 /// # Examples
 ///
 ///```rust
-/// 
+///
 /// use procshot_server::check_sudo;
 /// use std::process;
 ///
@@ -401,7 +452,6 @@ pub fn check_sudo(uid: u32) -> Result<(), &'static str> {
         true => Ok(()),
         false => Err("Error: Run as root."),
     }
-
 }
 
 #[cfg(test)]
